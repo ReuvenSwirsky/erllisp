@@ -32,7 +32,7 @@ multi_form_input_test() ->
         erllisp:eval_string("(defn inc (n) (+ n 1)) (inc 6)")).
 
 load_file_test() ->
-    ?assertEqual({ok, 55},
+    ?assertEqual({ok, t},
         erllisp:eval_string("(load \"programs/fib10.lisp\")")).
 
 describe_builtin_test() ->

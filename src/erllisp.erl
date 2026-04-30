@@ -26,6 +26,10 @@ eval_file_with_env(Path, Env) when is_list(Path), is_map(Env) ->
     case file:read_file(Path) of
         {ok, Bin} ->
             eval_string_with_env(binary_to_list(Bin), Env);
+        {error, enoent} ->
+            {error, {file_not_found, Path}};
+        {error, eacces} ->
+            {error, {file_permission_denied, Path}};
         {error, Reason} ->
             {error, {file_read_error, Reason}}
     end.

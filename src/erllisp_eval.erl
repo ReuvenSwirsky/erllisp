@@ -145,12 +145,12 @@ eval_with_env(['source-fn', Name], Env) when is_atom(Name) ->
     end;
 eval_with_env(['load', {string, Path}], Env) ->
     case erllisp:eval_file_with_env(Path, Env) of
-        {ok, V, Env1} -> {ok, V, Env1};
+        {ok, _, Env1} -> {ok, t, Env1};
         Error         -> Error
     end;
 eval_with_env(['load', Path], Env) when is_atom(Path) ->
     case erllisp:eval_file_with_env(atom_to_list(Path), Env) of
-        {ok, V, Env1} -> {ok, V, Env1};
+        {ok, _, Env1} -> {ok, t, Env1};
         Error         -> Error
     end;
 

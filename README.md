@@ -1,72 +1,103 @@
 # Erlisp
 
-A tiny Lisp interpreter implemented as an Erlang OTP application.
+A Lisp interpreter implemented as an Erlang OTP application.
 
 ## Requirements
 
 - Erlang/OTP 25+
 - rebar3
 
-## Run
+## Quick Start
 
 ```bash
-rebar3 shell
+rebar3 shell --apps erllisp
 ```
 
-Then in the Erlang shell:
+Then start the REPL:
 
 ```erlang
-erllisp_repl:start().
+1> erllisp_repl:start().
 ```
 
-## Test
+```lisp
+erlisp> (+ 1 2 3)
+6
+erlisp> (defn square (n) (* n n))
+square
+erlisp> (square 12)
+144
+erlisp> (load "programs/lists.lisp")
+t
+erlisp> :q
+```
+
+## Run Tests
 
 ```bash
 rebar3 eunit
 ```
 
-## Example
+## Language Features
+
+| Feature | Example |
+|---------|---------|
+| Arithmetic | `(+ 1 (* 3 4))` |
+| Booleans | `(if (< x 0) 'negative 'positive)` |
+| Strings | `"hello"` |
+| `nil` / lists | `(cons 1 (cons 2 nil))` → `(1 2)` |
+| Quote | `'(a b c)` |
+| Quasiquote | `` `(1 ,(+ 1 1) 3) `` → `(1 2 3)` |
+| Named functions | `(defn fib (n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))` |
+| Anonymous functions | `(fn (x) (* x x))` |
+| Closures | `(let add (fn (x) (fn (y) (+ x y))) ((add 3) 4))` |
+| Variadic args | `(defn sum (&rest xs) (foldl (fn (a b) (+ a b)) 0 xs))` |
+| Macros | `(defmacro when (c b) \`(if ,c ,b nil))` |
+| `let` / `let*` | `(let* ((a 1) (b (+ a 1))) b)` |
+| `begin` | `(begin (print 1) (print 2) 3)` |
+| `map` / `filter` | `(map (fn (x) (* x x)) '(1 2 3 4 5))` |
+| `apply` | `(apply + '(1 2 3))` |
+| Tail-call optimization | Recursive loops over millions of iterations without stack overflow |
+| Introspection | `(describe fib)` `(source fib)` |
+| File loading | `(load "programs/lists.lisp")` → `t` |
+
+## Example Programs
+
+| File | Contents |
+|------|----------|
+| `programs/fib10.lisp` | Returns fib(10) = 55 |
+| `programs/fib1000.lisp` | Prints first 1000 Fibonacci numbers |
+| `programs/lists.lisp` | cons/car/cdr, range, map, filter, fold |
+| `programs/macros.lisp` | defmacro, quasiquote templates, when/unless |
+| `programs/variadic.lisp` | &rest, apply, map, filter |
+| `programs/tco_demo.lisp` | Tail-call countdown (1M), sum (1M), Ackermann |
+
+Load any of them from the REPL:
 
 ```lisp
-(+ 1 2 3)
-(* 4 (+ 1 1))
-(if true 10 20)
-(describe +)
-(source +)
+erlisp> (load "programs/tco_demo.lisp")
 ```
 
-Load and run the pure Lisp Fibonacci printer:
+Or from the Erlang shell:
 
-```lisp
-(load "programs/fib1000.lisp")
+```erlang
+erllisp:eval_file("programs/lists.lisp").
 ```
 
-It prints the first 1000 Fibonacci numbers, one per line.
+## Error Messages
 
-## Load Program Files
-
-You can load and execute Lisp files at runtime:
+The REPL shows human-readable errors:
 
 ```lisp
-(load "programs/fib1000.lisp")
-```
+erlisp> (load "missing.lisp")
+error: file not found: missing.lisp
 
-Loaded files can now contain multiple top-level expressions; they are evaluated in order.
+erlisp> (foo 1 2)
+error: unbound symbol: foo
 
-The repository includes:
-
-- `programs/fib1000.lisp`
-- `programs/fib10.lisp` (returns 55)
-
-After loading, definitions remain available in the same session, so this works:
-
-```lisp
-(load "programs/fib10.lisp")
-(describe fib)
-(source fib)
-(fib 11)
+erlisp> (car nil)
+error: car of nil
 ```
 
 ## Syntax Manual
 
-See `docs/MANUAL.md`.
+See [`docs/MANUAL.md`](docs/MANUAL.md) for the full language reference.
