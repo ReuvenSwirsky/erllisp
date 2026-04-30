@@ -1,0 +1,21 @@
+{application, erllisp,
+ [{description, "Erlisp: a tiny Lisp interpreter in Erlang"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {erllisp_app, []}},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []},
+  {modules, [
+             erllisp_app,
+             erllisp_sup,
+             erllisp,
+             erllisp_reader,
+             erllisp_eval,
+             erllisp_repl
+            ]},
+  {licenses, ["Apache-2.0"]},
+  {links, []}
+ ]}.
