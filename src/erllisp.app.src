@@ -13,6 +13,7 @@
              erllisp_sup,
              erllisp,
              erllisp_reader,
+             erllisp_printer,
              erllisp_eval,
              erllisp_repl
             ]},
