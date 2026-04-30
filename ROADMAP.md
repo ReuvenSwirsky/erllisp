@@ -2,158 +2,131 @@
 
 ## Completed
 
-- [x] Integer arithmetic: `+`, `-`, `*`, `/`
+- [x] Integer arithmetic: `+`, `-`, `*`, `/`, `mod`
 - [x] Booleans: `true`, `false`
 - [x] Strings: `"hello"`
 - [x] Symbols and lexical environments
-- [x] `if` / `let` / `begin`
+- [x] `if` (2- and 3-branch) / `let` / `begin`
 - [x] `defn` — named recursive functions
 - [x] `fn` — anonymous closures
-- [x] Comparisons: `=`, `<`, `>`
-- [x] `print`
+- [x] Comparisons: `=`, `<`, `>`, `<=`, `>=`
+- [x] `print` / `println`
 - [x] `load` — multi-form file loading with environment persistence
 - [x] `describe` — symbol introspection
 - [x] `source` / `source-fn` — Lisp-printed source form retrieval
 - [x] REPL with persistent environment
+- [x] `;` line comments
+
+### Phase 1 ✅ — Core Lisp Primitives
+
+- [x] `nil` literal — the empty list / falsy value
+- [x] `cons` / `car` / `cdr` / `list` / `null?` / `pair?` / `list?`
+- [x] Printer: cons chains render as `(a b c)` or `(a . b)`
+- [x] `'x` quote sugar, `` `x `` quasiquote, `,x` unquote, `,@x` unquote-splicing
+- [x] `(quote expr)` / `(quasiquote expr)` special forms
+- [x] `defmacro` — macro transformer on raw AST, result re-evaluated in caller env
+- [x] `set!` — mutate binding in current env
+
+### Phase 2 ✅ — Language Completeness
+
+- [x] Variadic functions: `(defn f (a &rest rest) body)`
+- [x] Tail-call optimization — trampoline; `if`/`begin`/function-body tail positions bounce
+- [x] `let*` — sequential bindings
+- [x] `not` / `and` / `or` builtins
+- [x] `apply` — `(apply f args-list)`
+- [x] `map` / `filter` — higher-order list operations
+- [x] `length` / `append` / `reverse`
+- [x] `str` / `number->string` / `string->number`
+- [x] `number?` / `string?` / `symbol?` / `fn?` type predicates
 
 ---
 
-## Phase 1 — Core Lisp Primitives (implement now)
+## Phase 3 — Ergonomics (next up)
 
-### 1. nil / cons cells / list primitives
+### 1. `cond`
 
-`nil` is the empty list. Proper cons pairs underpin all Lisp data structures.
-
-Forms to add:
-- `nil` literal → evaluates to `nil`
-- `cons` builtin → `(cons head tail)`
-- `car` builtin → first element of a pair/list
-- `cdr` builtin → tail of a pair/list
-- `list` builtin → `(list 1 2 3)` → cons chain
-- `null?` / `pair?` / `list?` predicates
-
-Printer: render cons chains as `(a b c)` or `(a . b)`.
-
-### 2. Quote and quasiquote
-
-Quote stops evaluation; quasiquote enables template expansion (essential for macros).
-
-Reader sugar to add:
-- `'x`  → `(quote x)`
-- `` `x`` → `(quasiquote x)`
-- `,x`  → `(unquote x)`
-- `,@x` → `(unquote-splicing x)`
-
-Evaluator special forms:
-- `(quote expr)` → returns expr unevaluated
-- `(quasiquote expr)` → evaluates unquote/unquote-splicing holes, returns rest literally
-- `(quasiquote)` nesting must handle depth correctly
-
-### 3. defmacro + macro expansion
-
-Macros are functions that run at expand time on unevaluated AST and return new AST.
-
-Forms to add:
-- `(defmacro name (params...) body)` — defines a macro transformer
-- Macro expansion pass runs before evaluation
-- `macroexpand` / `macroexpand-1` for introspection
-
-Expansion rule: when `(foo ...)` is evaluated and `foo` is bound to a macro, call the macro transformer with the raw argument forms, then evaluate the returned form.
-
----
-
-## Phase 2 — Language Completeness
-
-### 4. Variadic functions
-
-Allow functions to collect extra arguments into a list.
-
-Syntax (same as Common Lisp / Clojure):
-- `(defn f (a b &rest args) body)` — `args` binds remaining arguments as a list
-
-### 5. Tail-call optimization (TCO)
-
-Erlang has a finite call stack. Without TCO, recursive Lisp programs will stack overflow.
-
-Strategy: use a trampoline in the evaluator.
-- Instead of a recursive Erlang call for tail positions, return `{tail_call, Fun, Args}`.
-- The top-level eval loop bounces until a real value comes back.
-- Self-tail-calls in `defn` and `fn` are the common case.
-
-### 6. Multiple return values
-
-Common Lisp / Scheme: `(values a b c)` + `(call-with-values producer consumer)`.
-
-Simpler Clojure-style alternative: return a vector/list and destructure with `let`.
-
-Decision: implement `values` / `receive-values` (simpler than full CL).
-
----
-
-## Phase 3 — Ergonomics
-
-### 7. `let*` and `letrec`
-
-- `let*` — sequential bindings (each can see previous)
-- `letrec` — mutually recursive local functions
-
-### 8. `cond`
-
-Multi-branch conditional:
+Multi-branch conditional sugar:
 ```lisp
 (cond
-  ((= x 0) "zero")
-  ((< x 0) "negative")
-  (true    "positive"))
+  ((= x 0) 'zero)
+  ((< x 0) 'negative)
+  (true    'positive))
+```
+Can be implemented as a macro over nested `if`.
+
+### 2. `letrec`
+
+Mutually recursive local functions — bindings all visible to each other's bodies:
+```lisp
+(letrec ((even? (fn (n) (if (= n 0) true  (odd?  (- n 1)))))
+         (odd?  (fn (n) (if (= n 0) false (even? (- n 1))))))
+  (even? 10))
 ```
 
-### 9. `and` / `or` (short-circuit)
+### 3. `do` / `loop-recur`
 
-### 10. `do` / `loop` — iterative looping without recursion
+Iterative looping without explicit recursion:
+```lisp
+(do ((i 0 (+ i 1))
+     (acc 0 (+ acc i)))
+    ((= i 10) acc))
+```
 
-### 11. String builtins
+### 4. `when` / `unless` macros
 
-- `str-length`, `str-concat`, `str-split`, `str-contains`, `number->string`, `string->number`
+```lisp
+(when (> x 0) (print x) x)
+(unless (null? xs) (car xs))
+```
 
-### 12. Exception handling
+### 5. String builtins
 
-- `(try expr (catch e handler))` — maps to Erlang try/catch
+- `str-length` — `(str-length "hello")` → 5
+- `str-concat` — alias for `str`
+- `str-split` — `(str-split "a,b,c" ",")` → `("a" "b" "c")`
+- `str-contains` / `str-starts-with` / `str-ends-with`
 
-### 13. `apply`
+### 6. Exception handling
 
-- `(apply f args-list)` — call function with a list as argument list
+```lisp
+(try
+  (/ 1 0)
+  (catch e (print e) 'error))
+```
+Maps to Erlang `try/catch`.
 
-### 14. `map` / `filter` / `reduce`
+### 7. `macroexpand` / `macroexpand-1`
 
-Higher-order list operations.
+Introspect macro expansion without evaluating the result — essential for debugging macros.
 
 ---
 
 ## Phase 4 — Advanced
 
-### 15. Namespaces / modules
+### 8. Namespaces / modules
 
 Group definitions into named scopes. Load with `(require "module")`.
 
-### 16. Tail calls across mutual recursion
+### 9. Proper tail calls across mutual recursion
 
-Full proper tail calls, not just self-recursion.
+Currently TCO only covers self-tail calls and simple tail positions. Full proper tail calls
+across mutually-recursive functions require continuation-passing or first-class trampolines
+shared across function boundaries.
 
-### 17. Hygienic macros (syntax-rules style)
+### 10. Hygienic macros (`syntax-rules` style)
 
 Pattern-based macros that don't accidentally capture free variables.
 
-### 18. Continuations (`call/cc`)
+### 11. Continuations (`call/cc`)
 
-Full Scheme-style first-class continuations. Very complex with Erlang stack model — may require CPS transform.
+Full Scheme-style first-class continuations. Very complex with Erlang stack model —
+likely requires a CPS transform of the entire evaluator.
 
 ---
 
 ## Implementation Order
 
 ```
-Phase 1 items (nil/cons, quote/quasiquote, defmacro) — foundational, do first
-Phase 2 items (variadic, TCO) — correctness
-Phase 3 items (let*, cond, and/or, string builtins, apply, map/filter) — ergonomics
-Phase 4 items (namespaces, call/cc) — advanced
+Phase 3 items — cond/letrec/do/when/unless, strings, exceptions, macroexpand
+Phase 4 items — namespaces, full TCO, call/cc (advanced, lower priority)
 ```

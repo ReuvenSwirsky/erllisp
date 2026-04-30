@@ -61,5 +61,5 @@ coerce_name(undefined) -> anonymous;
 coerce_name(Name)      -> Name.
 
 is_string([]) -> false;
-is_string(S)  -> lists:all(fun(C) -> is_integer(C) andalso C >= 0 andalso C =< 1114111 end, S).
+is_string(S)  -> lists:all(fun(C) -> is_integer(C) andalso C >= 32 andalso C =< 126 end, S).
 

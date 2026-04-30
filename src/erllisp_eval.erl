@@ -543,6 +543,8 @@ apply_builtin('map', [Fun, List]) when is_list(List) ->
 apply_builtin('filter', [Fun, nil]) when is_tuple(Fun) -> {ok, nil};
 apply_builtin('filter', [Fun, List]) when is_list(List) ->
     filter_fn(Fun, List, []);
+apply_builtin('apply', [Fun, nil]) ->
+    apply_builtin('apply', [Fun, []]);
 apply_builtin('apply', [Fun, Args]) when is_list(Args) ->
     case Fun of
         {user_fun, Name, Fixed, Rest, Body, ClosureEnv, _Src} ->
